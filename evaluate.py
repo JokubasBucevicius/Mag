@@ -2,6 +2,7 @@ import os
 import torch
 from torch_geometric.loader import DataLoader as PyGDataLoader
 from sklearn.metrics import precision_score, accuracy_score, f1_score, confusion_matrix, recall_score
+import pickle
 
 from model import ProteinGAT
 from data_loader import DataLoader
@@ -25,8 +26,23 @@ def list_saved_models(directory="trained_models"):
 
     return models
 
-def evaluate_model(graphs, batch_size, mode, model_path, device):
-    pyg_graphs = [g["pyg_graph"] for g in graphs]
+def evaluate_model(batch_size, mode, model_path, device):
+    """
+    Loads a trained model and evaluates it on the saved test dataset.
+    """
+    # Load the test dataset associated with this model
+    test_data_path = model_path.replace(".pt", "_test_graphs.pkl")
+
+    if not os.path.exists(test_data_path):
+        print(f"Error: No test dataset found for {model_path}")
+        return
+
+    with open(test_data_path, "rb") as f:
+        test_graphs = pickle.load(f)
+
+    print(f"Loaded test dataset from {test_data_path}")
+
+    pyg_graphs = [g["pyg_graph"] for g in test_graphs]
     test_loader = PyGDataLoader(pyg_graphs, batch_size=batch_size, shuffle=False)
 
     input_dim = pyg_graphs[0].x.shape[1]

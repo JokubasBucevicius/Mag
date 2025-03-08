@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch_geometric.data import DataLoader as PyGDataLoader
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+import pickle
 
 from data_loader import DataLoader
 from model import ProteinGAT
@@ -58,7 +59,7 @@ def train_one_epoch(model, data_loader, optimizer, criterion, device, threshold)
     return avg_loss
 
 
-def train_model(graphs, batch_size, mode, num_epochs, learning_rate, hidden_dim, heads, device, model_name, threshold):
+def train_model(graphs, batch_size, mode, num_epochs, learning_rate, hidden_dim, heads, device, model_name, threshold, test_graphs):
     from torch_geometric.data import DataLoader as PyGDataLoader
     from model import ProteinGAT
 
@@ -86,5 +87,11 @@ def train_model(graphs, batch_size, mode, num_epochs, learning_rate, hidden_dim,
     model_path = f"trained_models/{model_name}.pt"
     torch.save(model.state_dict(), model_path)
     print(f"Model saved to {model_path}")
+
+    # Save test dataset
+    test_data_path = f"trained_models/{model_name}_test_graphs.pkl"
+    with open(test_data_path, "wb") as f:
+        pickle.dump(test_graphs, f)
+    print(f"Test dataset saved to {test_data_path}")
 
 
