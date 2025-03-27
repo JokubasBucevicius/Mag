@@ -7,6 +7,7 @@ import pickle
 
 from data_loader import DataLoader
 from model import ProteinGAT
+from loss_functions import focal_loss_with_logits
 
 
 def train_one_epoch(model, data_loader, optimizer, criterion, device, threshold):
@@ -50,8 +51,8 @@ def train_one_epoch(model, data_loader, optimizer, criterion, device, threshold)
         recall = recall_score(all_labels, all_preds, zero_division=0)
         f1 = f1_score(all_labels, all_preds, zero_division=0)
 
-        print(f"Train Loss: {avg_loss:.4f}, Node Accuracy: {acc:.4f}")
-        print(f"Node Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}")
+        print(f"Train Loss: {avg_loss:.4f}, Train Accuracy: {acc:.4f}")
+        print(f"Train Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}")
     else:
         f1 = f1_score(all_labels, all_preds, average='weighted')
         print(f"Train Loss: {avg_loss:.4f}, Node F1 Score: {f1:.4f}")
@@ -73,7 +74,12 @@ def train_model(graphs, batch_size, mode, num_epochs, learning_rate, hidden_dim,
 
     if mode == "binary":
         # Use BCEWithLogitsLoss (reduction='none') — allows us to apply per-node weights later
-        criterion = nn.BCEWithLogitsLoss(reduction='none')
+        criterion = lambda inputs, targets: focal_loss_with_logits(
+            inputs, targets,
+            alpha=0.95,
+            gamma=2,
+            reduction='none'
+        )   # try out Focal Loss instead, with alpha parameter, add the class weights, additional information (Train accuracy and train f1)
     else:
         criterion = nn.CrossEntropyLoss(reduction='none')  # Multiclass also needs per-node weights support
 

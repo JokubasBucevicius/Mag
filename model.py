@@ -25,8 +25,9 @@ class ProteinGAT(torch.nn.Module):
 
         out = self.fc(x)  # shape: [n_nodes, output_dim]
 
-        if self.mode == "binary":
-            return torch.sigmoid(out).squeeze(-1)  # shape: [n_nodes]
-        else:
-            return F.log_softmax(out, dim=-1)  # shape: [n_nodes, num_classes]
+        # if self.mode == "binary":
+        #     return torch.sigmoid(out).squeeze(-1)  # shape: [n_nodes]
+        # else:
+        #     return F.log_softmax(out, dim=-1)  # shape: [n_nodes, num_classes]
+        return out.squeeze(-1)
     

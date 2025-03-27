@@ -14,8 +14,8 @@ def main():
     base_path = "../grafai/graphs/k95/dgDNR/"
     batch_size = 40
     mode = "binary"
-    num_epochs = 50
-    learning_rate = 0.00001
+    num_epochs = 100
+    learning_rate = 0.0001
     hidden_dim = 64
     heads = 4
     threshold = 0.3

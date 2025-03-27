@@ -5,7 +5,7 @@ Script for loading and cleaning the data (creating PyG datasets)
 
 import os
 import pandas as pd
-
+import random
 
 
 
@@ -89,11 +89,34 @@ class DataLoader:
 
         return protein_graphs
     
-    def load_and_split(self, train_ratio=0.8):
+    def load_and_split(self, train_ratio=0.8, shuffle = True):
+        """
+        Loads protein graphs and splits them into training and test sets.
+
+        :param train_ratio: Proportion of data used for training (default 80%).
+        :param shuffle: Whether to shuffle the dataset before splitting (default True).
+        """
         protein_graphs = self.load_protein_graphs()
+
+        pdb_ids = [g["pdb_id"] for g in protein_graphs]
+
+        # Shuffle for randomness
+        if shuffle:
+            combined = list(zip(pdb_ids, protein_graphs))
+            random.shuffle(combined)
+            pdb_ids, protein_graphs = zip(*combined)
+
         split_idx = int(len(protein_graphs) * train_ratio)
         train_graphs = protein_graphs[:split_idx]
         test_graphs = protein_graphs[split_idx:]
+
+        # Extract PDB IDs again for logging
+        train_pdbs = pdb_ids[:split_idx]
+        test_pdbs = pdb_ids[split_idx:]
+
+        print(f"Training set ({len(train_graphs)} proteins): {', '.join(train_pdbs)}")
+        print(f"Test set ({len(test_graphs)} proteins): {', '.join(test_pdbs)}")
+
         return train_graphs, test_graphs
 
     def clean_nodes(self, nodes_df: pd.DataFrame) -> pd.DataFrame:
@@ -257,12 +280,21 @@ class DataLoader:
         node_weights = torch.ones(len(nodes_df), dtype=torch.float)
 
         # Surface atoms weight
-        node_weights[nodes_df["surface_atom"] == 1] *= 1.5
+        # node_weights[nodes_df["surface_atom"] == 1] *= 1.5
+
+        # The sum of the weights of all examples stays the same.
+        # weight_for_0 = (1 / neg) * (total / 2.0)
+        # weight_for_1 = (1 / pos) * (total / 2.0)
+
+        # class_weight = {0: weight_for_0, 1: weight_for_1}
+
+        # print('Weight for class 0: {:.2f}'.format(weight_for_0))
+        # print('Weight for class 1: {:.2f}'.format(weight_for_1))
 
         # Residue types  weight for each amino acid
         for res_type, prob in self.binding_probabilities.items():
             node_weights[nodes_df["residue_type"] == res_type] *= (1.0 + prob * 5.0)  # Scale to amplify effect
-
+        
         # Create PyTorch Geometric Data object
         graph_data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y, node_weights=node_weights)
 
